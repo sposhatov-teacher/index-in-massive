@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Индексы в массивах</title>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #00f2ff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff;
+            margin-bottom: 30px;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* Стили матрицы */
+        #matrix-container {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            grid-template-rows: repeat(5, 60px);
+            gap: 10px;
+            background: rgba(0, 242, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00f2ff;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+
+        .cell {
+            width: 60px;
+            height: 60px;
+            border: 1px solid #00f2ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            border-radius: 5px;
+            user-select: none;
+        }
+
+        .cell:hover {
+            background: rgba(0, 242, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .cell.selected {
+            background: #ff00de;
+            color: white;
+            box-shadow: 0 0 15px #ff00de, 0 0 30px #ff00de;
+            border-color: #ff00de;
+        }
+
+        /* Стили панели заданий */
+        .tasks-panel {
+            max-width: 400px;
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #ff00de;
+            box-shadow: 0 0 10px rgba(255, 0, 222, 0.2);
+        }
+
+        .task {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-left: 4px solid #00f2ff;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .difficulty {
+            font-size: 0.8em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .diff-easy { color: #00ff41; }
+        .diff-medium { color: #ffcc00; }
+        .diff-hard { color: #ff003c; }
+
+        button {
+            background: transparent;
+            color: #ff00de;
+            border: 2px solid #ff00de;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #ff00de;
+            color: white;
+            box-shadow: 0 0 20px #ff00de;
+        }
+
+        #feedback {
+            margin-top: 20px;
+            font-weight: bold;
+            height: 24px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Проверим структу массивов...</h1>
+
+    <div class="container">
+        <div id="matrix-container"></div>
+
+        <div class="tasks-panel">
+            <div id="task-content">
+                <span id="task-diff" class="difficulty"></span>
+                <p id="task-text"></p>
+                <button onclick="checkAnswer()">Проверить ответ</button>
+            </div>
+            <div id="feedback"></div>
+        </div>
+    </div>
+
+    <script>
+        const size = 5;
+        let matrix = [];
+        let selectedCells = new Set();
+        let currentTask = 0;
+
+        const tasks = [
+            {
+                level: "Легкий",
+                class: "diff-easy",
+                text: "Выдели ячейку с индексами [0][0] и ячейку с индексами [4][4].",
+                check: (selected) => selected.has("0-0") && selected.has("4-4") && selected.size === 2
+            },
+            {
+                level: "Легкий",
+                class: "diff-easy",
+                text: "Выдели все ячейки, где индекс строки равен 2.",
+                check: (selected) => {
+                    const correct = ["2-0", "2-1", "2-2", "2-3", "2-4"];
+                    return correct.every(id => selected.has(id)) && selected.size === 5;
+                }
+            },
+            {
+                level: "Средний",
+                class: "diff-medium",
+                text: "Выдели ячейки главной диагонали (где индекс строки равен индексу столбца).",
+                check: (selected) => {
+                    const correct = ["0-0", "1-1", "2-2", "3-3", "4-4"];
+                    return correct.every(id => selected.has(id)) && selected.size === 5;
+                }
+            },
+            {
+                level: "Средний",
+                class: "diff-medium",
+                text: "Выдели весь столбец с индексом 3.",
+                check: (selected) => {
+                    const correct = ["0-3", "1-3", "2-3", "3-3", "4-3"];
+                    return correct.every(id => selected.has(id)) && selected.size === 5;
+                }
+            },
+            {
+                level: "Сложный",
+                class: "diff-hard",
+                text: "Выдели ячейки, у которых индекс строки больше индекса столбца (ниже главной диагонали).",
+                check: (selected) => {
+                    let correctCount = 0;
+                    for(let i=0; i<5; i++) {
+                        for(let j=0; j<5; j++) {
+                            if(i > j) {
+                                if(!selected.has(`${i}-${j}`)) return false;
+                                correctCount++;
+                            }
+                        }
+                    }
+                    return selected.size === correctCount;
+                }
+            }
+        ];
+
+        function initMatrix() {
+            const container = document.getElementById('matrix-container');
+            container.innerHTML = '';
+            for (let i = 0; i < size; i++) {
+                matrix[i] = [];
+                for (let j = 0; j < size; j++) {
+                    const val = Math.floor(Math.random() * 90) + 10;
+                    matrix[i][j] = val;
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `${i}-${j}`;
+                    cell.innerText = val;
+                    cell.onclick = () => toggleCell(i, j);
+                    container.appendChild(cell);
+                }
+            }
+            updateTask();
+        }
+
+        function toggleCell(i, j) {
+            const id = `${i}-${j}`;
+            const element = document.getElementById(id);
+            if (selectedCells.has(id)) {
+                selectedCells.delete(id);
+                element.classList.remove('selected');
+            } else {
+                selectedCells.add(id);
+                element.classList.add('selected');
+            }
+        }
+
+        function updateTask() {
+            if (currentTask < tasks.length) {
+                const t = tasks[currentTask];
+                document.getElementById('task-diff').innerText = t.level;
+                document.getElementById('task-diff').className = 'difficulty ' + t.class;
+                document.getElementById('task-text').innerText = t.text;
+                document.getElementById('feedback').innerText = '';
+                // Очистка выделения
+                selectedCells.clear();
+                document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+            } else {
+                document.getElementById('task-content').innerHTML = "<h2>Миссия выполнена! Ты мастер матриц!</h2>";
+            }
+        }
+
+        function checkAnswer() {
+            const fb = document.getElementById('feedback');
+            if (tasks[currentTask].check(selectedCells)) {
+                fb.style.color = "#00ff41";
+                fb.innerText = "Правильно! Переходим дальше...";
+                setTimeout(() => {
+                    currentTask++;
+                    updateTask();
+                }, 1500);
+            } else {
+                fb.style.color = "#ff003c";
+                fb.innerText = "Ошибка в индексах. Попробуй еще раз.";
+            }
+        }
+
+        initMatrix();
+    </script>
+</body>
+</html>
